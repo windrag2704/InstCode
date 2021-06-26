@@ -1,0 +1,72 @@
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.concurrent.ConcurrentLinkedQueue;
+
+class ThWriter {
+    public static BufferedWriter bw;
+    private static Thread thread;
+    private static ConcurrentLinkedQueue<String> lines = new ConcurrentLinkedQueue<>();
+
+    static {
+        try {
+            bw = new BufferedWriter(new FileWriter("proto"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        Runnable writer = () -> {
+            try {
+                while (true) {
+                    if (lines.isEmpty()) {
+                        Thread.sleep(1000);
+                        continue;
+                    }
+                    String line;
+                    while ((line = lines.poll()) != null) {
+                        try {
+                            bw.write(line);
+                            bw.newLine();
+                        } catch (IOException ioException) {
+                            ioException.printStackTrace();
+                        }
+                    }
+                    try {
+                        bw.flush();
+                    } catch (IOException ignored) {
+                    }
+                }
+            } catch (InterruptedException e) {
+                System.out.println("Writer interrupted, writing all queue into file");
+                String line;
+                while ((line = lines.poll()) != null) {
+                    try {
+                        bw.write(line);
+                        bw.newLine();
+                    } catch (IOException ioException) {
+                        ioException.printStackTrace();
+                    }
+                }
+            }
+        };
+        thread = new Thread(writer);
+        thread.start();
+    }
+
+    public static void write(String str) {
+        lines.add(str);
+    }
+
+    public static void join() {
+        thread.interrupt();
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            System.err.println("Thread " + Thread.currentThread().getName() + " interrupted.");
+        }
+        try {
+            bw.close();
+        } catch (IOException e) {
+            System.err.println("Can't close output file: " + e.getMessage());
+        }
+    }
+}

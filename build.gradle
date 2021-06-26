@@ -1,0 +1,29 @@
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.github.javaparser:javaparser-symbol-solver-core:3.18.0'
+    }
+}
+plugins {
+    id 'idea'
+    id 'java'
+}
+sourceSets {
+    main {
+        java {
+            srcDirs 'src'
+        }
+    }
+}
+dependencies {
+    implementation fileTree(dir: 'lib', include: ['*.jar'])
+}
+task copyToLib(type: Copy) {
+    into "lib"
+    from buildscript.configurations.classpath
+}
+copyToLib
+
